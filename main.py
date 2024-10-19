@@ -1,38 +1,34 @@
-from dotenv import load_dotenv
-import os
-import json
 import firebase_admin
 from firebase_admin import credentials, auth
 import streamlit as st
+import json
 
-# Carregar o arquivo .env explicitamente (use o caminho correto)
-load_dotenv()
+# Carregar as credenciais do Firebase diretamente dos segredos
+firebase_config = st.secrets["firebase"]
 
-# Carregar o caminho do arquivo de credenciais do Firebase a partir do .env
-cred_path = os.getenv('FIREBASE_CREDENTIALS_JSON')
-
-
-# Se o caminho estiver None, exibir um erro
-if cred_path is None:
-    st.error("A variável de ambiente 'FIREBASE_CREDENTIALS_JSON' não foi encontrada no arquivo .env.")
+# Converter as strings do toml para um dicionário JSON
+firebase_config_dict = {
+    "type": firebase_config["type"],
+    "project_id": firebase_config["project_id"],
+    "private_key_id": firebase_config["private_key_id"],
+    "private_key": firebase_config["private_key"].replace("\\n", "\n"),  # Corrigir quebras de linha na chave privada
+    "client_email": firebase_config["client_email"],
+    "client_id": firebase_config["client_id"],
+    "auth_uri": firebase_config["auth_uri"],
+    "token_uri": firebase_config["token_uri"],
+    "auth_provider_x509_cert_url": firebase_config["auth_provider_x509_cert_url"],
+    "client_x509_cert_url": firebase_config["client_x509_cert_url"]
+}
 
 # Verifique se o Firebase já foi inicializado
 if not firebase_admin._apps:
-    if cred_path and os.path.exists(cred_path):
-        try:
-            # Abrir e carregar o conteúdo JSON do arquivo de credenciais
-            with open(cred_path) as f:
-                cred_dict = json.load(f)
-                cred = credentials.Certificate(cred_dict)
-
-            # Inicializar o Firebase
-            firebase_admin.initialize_app(cred)
-            st.success("Firebase inicializado com sucesso!")
-        except Exception as e:
-            st.error(f"Erro ao inicializar o Firebase: {str(e)}")
-            st.stop()
-    else:
-        st.error("Arquivo de credenciais do Firebase não encontrado.")
+    try:
+        # Inicializar o Firebase usando as credenciais convertidas
+        cred = credentials.Certificate(firebase_config_dict)
+        firebase_admin.initialize_app(cred)
+        st.success("Firebase inicializado com sucesso!")
+    except Exception as e:
+        st.error(f"Erro ao inicializar o Firebase: {str(e)}")
         st.stop()
 
 # Interface de login/signup com Streamlit
@@ -60,6 +56,8 @@ else:
             st.balloons()
         except Exception as e:
             st.error(f"Erro ao criar a conta: {str(e)}")
+
+
 
 
 
