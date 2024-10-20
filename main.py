@@ -4,7 +4,11 @@ import streamlit as st
 import json
 
 # Carregar as credenciais do Firebase diretamente dos segredos
-firebase_config = st.secrets["firebase"]
+try:
+    firebase_config = st.secrets["firebase"]
+except KeyError:
+    st.error("Credenciais do Firebase não encontradas nos segredos.")
+    st.stop()
 
 # Converter as strings do toml para um dicionário JSON
 firebase_config_dict = {
@@ -56,9 +60,4 @@ else:
             st.balloons()
         except Exception as e:
             st.error(f"Erro ao criar a conta: {str(e)}")
-
-
-
-
-
 
